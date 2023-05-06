@@ -6,12 +6,13 @@
         <div class="weather-img">
 
             <div class="weather-temp">
-                <img class="weather-state" v-bind:src="imgSource" alt="Current weather"> 
+                <!-- <img class="weather-state" v-bind:src="imgSource" alt="Current weather">  -->
+                <h1 class="weatherLive">{{liveWeather}}</h1>
                 <h1 class="temp-text">{{temp}} &deg;C</h1>
             </div>
 
             <p class="weather-description">{{description}}</p>
-            <p class="weather-feel-like">Feels like {{feel_like}}&deg;C</p>
+            <!-- <p class="weather-feel-like">Feels like {{feel_like}}&deg;C</p> -->
 
             <div class="humidity-wind-container">
                 <div class="humidity">
@@ -19,9 +20,12 @@
                     <p>{{humidity}}%</p>
                 </div>
                 <div class="wind">
-                    <h3>Wind</h3>
-                    <p>{{wind}}km/h</p>
+                    <h3>Wind Level</h3>
+                    <p>{{wind}}</p>
                 </div>
+            </div>
+            <div class="updateTime">
+                <p>update time: {{ reporttime }}</p>
             </div>
         </div>
 
@@ -38,13 +42,8 @@
             <h1 class="info-text"> {{time()}} </h1>     
             <p class="line"> </p> 
             <div class="one-line-cover">
-                <h1 class="info-text"> Sun rise {{sun_rise}} </h1>     
-                <h1 class="info-text"> Sun set {{sun_down}} </h1>    
+                <h1 class="info-text"> wind direction {{windDirection}} </h1>     
             </div>
-            <h1 class="info-text">
-                Visibility:
-                {{visibility}}km
-            </h1> 
         </div>
     </div>
 </template>
@@ -57,6 +56,7 @@ name: 'WeatherInfo',
 props: ['dataAPI'], 
 data() {
     return{
+        liveWeather: '',
         hasAPI: false,
         name: '',
         temp: '',
@@ -67,20 +67,22 @@ data() {
         feel_like: '',
         sun_rise: '',
         sun_down: '',
-        size: '333px'
+        size: '333px',
+        reporttime: '',
+        windDirection: ''
     }
 },
 watch: {
     dataAPI: function() {
         this.hasAPI = true
-        this.handleAPI(this.dataAPI)
+        this.handleAPI(this.dataAPI.lives[0])
     }
 },
 computed:{
     imgSource() {
-        if(this.dataAPI.weather[0].icon){
-            return `http://openweathermap.org/img/wn/${this.dataAPI.weather[0].icon}@2x.png`;
-        }           
+        // if(this.dataAPI.weather[0].icon){
+        //     return `http://openweathermap.org/img/wn/${this.dataAPI.weather[0].icon}@2x.png`;
+        // }           
 
         return "http://openweathermap.org/img/wn/10d@2x.png";
     }
@@ -89,15 +91,13 @@ computed:{
 methods:{
     handleAPI(data){
         if(data){
-            this.name = data.name
-            this.temp = Math.round(data.main.temp - 273.15)
-            this.visibility = Math.round((data.visibility) / 1000)
-            this.humidity = data.main.humidity
-            this.description = data.weather[0].description
-            this.wind = Math.round(data.wind.speed * 3,6)
-            this.feel_like = Math.round(data.main.feels_like - 273.15) 
-            this.sun_rise = this.sunTime(data.sys.sunrise) 
-            this.sun_down = this.sunTime(data.sys.sunset) 
+            this.name = data.province + "-" + data.city
+            this.humidity = data.humidity_float
+            this.liveWeather = data.weather
+            this.reporttime = data.reporttime
+            this.windDirection = data.winddirection
+            this.temp = data.temperature_float
+            this.wind = data.windpower
         } else{
             return "--"
         }
@@ -175,6 +175,12 @@ methods:{
     height: 150px;
 }
 
+.weatherLive{
+    font-size: 40px;
+    color: var(--white-color);
+    margin-right: 20px;
+}
+
 .temp-text{
     font-size: 40px;
     color: var(--white-color);
@@ -201,6 +207,12 @@ methods:{
     justify-content: space-around;
     font-weight: bolder;
     color: var(--white-color);
+}
+
+.updateTime{
+    font-weight: bolder;
+    color: var(--white-color);
+    font-size: 14px;
 }
 
 .show-info-weather{
@@ -254,6 +266,7 @@ methods:{
 
 .one-line-cover{
     display: flex;
+    justify-content: center;
 }
 
 </style>

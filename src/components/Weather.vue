@@ -109,17 +109,20 @@ export default {
             }
             else {
                 try {
-                    axios.get(`https://api.openweathermap.org/data/2.5/weather?q=${this.inputText}&appid=${process.env.VUE_APP_KEY_WEATHER}`)
-                    // axios.get(`https://restapi.amap.com/v3/weather/weatherInfo?key=2e6dc9389df9df6784b22a066d266e84&city=440106`)
+                    let adcode = ""
+                    axios.get(`https://restapi.amap.com/v3/config/district?key=${process.env.VUE_APP_KEY_WEATHER}&keywords=${this.inputText}`)
                     .then(response => {
-                        this.dataAPI = response.data;
-                        // this.$emit("get-API", this.dataAPI)
-                        this.inputText = ''               
-                    })  
-                    .catch(() => {
-                        this.showToastMessage()
-                        this.inputText = ''               
-                    });
+                        adcode = response.data ?. districts[0] ?. adcode
+                        axios.get(`https://restapi.amap.com/v3/weather/weatherInfo?key=${process.env.VUE_APP_KEY_WEATHER}&city=${adcode}`)
+                        .then(response => {
+                            this.dataAPI = response.data;
+                            this.inputText = ''               
+                        })  
+                        .catch(() => {
+                            this.showToastMessage()
+                            this.inputText = ''               
+                        });
+                    })
                 }
                 catch (error) {
                    if (error.response) {
