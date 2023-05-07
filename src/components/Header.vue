@@ -21,6 +21,8 @@ export default {
   text-transform: uppercase;
 }
 
+/* 使用自定义属性  --xxx-xx */
+/* 然后调用 var函数进行获取具体值 */
 .title-word-1 {
   --color-1: #DF8453;
   --color-2: #3D8DAE;

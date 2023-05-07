@@ -26,31 +26,31 @@ export default {
 
 <style scoped>
   #app{
-    background: url('./assets/img/background-weather.jpg') no-repeat center center fixed;
-    background-size: cover;
+    background-image: url('./assets/img/rainbow.jpg');
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: contain;
+    background-position: center;
     text-align: center;
-    animation: change 20s infinite none;
+    /* animation: change 15s infinite; */
   }
 
 
   @keyframes change{
     0% {
-      background: url('./assets/img/background-weather.jpg') no-repeat center center fixed
+      background-image: url('./assets/img/rainbow.jpg');
     }
-    20% {
-      background: url('./assets/img/background1.jpg') no-repeat center center fixed
+    25% {
+      background-image: url('./assets/img/rain.jpg');
     }
-    40% {
-      background: url('./assets/img/background2.jpg') no-repeat center center fixed
+    50% {
+      background-image: url('./assets/img/thunderstorm.jpg');
     }
-    60% {
-      background: url('./assets/img/background-weather.jpg') no-repeat center center fixed
-    }
-    80% {
-      background: url('./assets/img/background1.jpg') no-repeat center center fixed
+    75% {
+      background-image: url('./assets/img/background1.jpg');
     }
     100% {
-      background: url('./assets/img/background2.jpg') no-repeat center center fixed
+      background-image: url('./assets/img/rainbow.jpg');
     }
   }
 

@@ -4,43 +4,73 @@
     <div class="content">
 
         <v-btn
+        v-if="!show"
+            class="btn1"
+            color="primary"
+            elevation="2"
+            @click="openKeyInBox()"    
+            >
+           Key In
+        </v-btn>
+
+        <v-btn
+        v-if="!show"
+            color="primary"
+            elevation="2"
+            @click="openSelectBox()"    
+            >
+           Select
+        </v-btn>
+
+        <v-btn
         v-if="show"
             color="red"
             elevation="2"
+            class="btn3"
             @click="closeBox()"    
             >
            Cancel
         </v-btn>
 
         <v-btn
-        v-else
-            color="primary"
+        v-if="show"
+            color="green"
             elevation="2"
-            @click="openBox()"    
+            @click="getAPI()"    
             >
-           Start
+           Query
         </v-btn>
 
         
        <div class="input-city">
         <v-text-field 
-            v-if="inputing"
+            v-if="inputingKey"
             ref="weatherInput"
-            color="primary"
+            color="teal lighten-2"
             shaped
             outlined
             v-model="inputText"
             class="custom-label-color"
-            label="Input your city"
-            placeholder="Enter your city"
+            label="请输入城市名称，仅支持单关键词查询"
+            placeholder=如“广东省”、“广州市”、“天河区”等单词，不支持输入“广东省广州市”等
             append-icon="X"
             @click:append="clearText()"
             @keyup.enter="getAPI()"
             >
         </v-text-field>
+
+        <v-treeview
+            v-if="inputingSelect"
+            activatable
+            color="primary"
+            dense
+            :open-all="false"
+            :items="districts"
+            @update:active="clickNode($event)"
+        ></v-treeview>
        </div>
 
-        <WeatherInfo :dataAPI="dataAPI" :inputText="inputText" />
+        <WeatherInfo :dataAPI="dataAPI" :query-type="queryType" :inputText="inputText" />
     </div>
 </div>
 
@@ -57,13 +87,16 @@ export default {
         return {
             show: false,
             alertBox: 'alertBox',
-            inputing: false,
+            inputingKey: false,
+            inputingSelect: false,
             inputText: '',
             dataAPI: null,
-            key: "c4e7b399b485192946342267e9f1dfa9",
             rules: {
                 name: [val => (val || '').length > 0 || 'This field is required']
-            }
+            },
+            districts: [],
+            selectedAdcode: "",
+            queryType: 1,
         };
     },
     methods: {
@@ -93,36 +126,69 @@ export default {
         },
 
         closeBox(){
-            this.inputing = false
+            this.dataAPI = ""
+            this.inputingKey = false
+            this.inputingSelect = false
             this.show = !this.show
         },
 
-        openBox(){
-            this.inputing = true
+        openKeyInBox(){
+            this.queryType = 1
+            this.inputingKey = true
+            this.show = !this.show
+        },
+
+        openSelectBox(){
+            this.queryType = 2
+            axios.get(`https://restapi.amap.com/v3/config/district?key=${process.env.VUE_APP_KEY_WEATHER}&keywords=中国&subdistrict=3`)
+            .then(res => {
+                const data = res.data.districts[0].districts
+                this.districts = this.recursion(data)
+            })
+            this.inputingSelect = true
             this.show = !this.show
         },
         
+        recursion(arr){
+            const data = []
+            arr.map((item,index) => {
+                let obj = {}
+                obj.name = item.name
+                obj.adcode = item.adcode
+                obj.id = item.adcode
+                if(item.districts.length > 0){
+                    obj.children = this.recursion(item.districts)
+                }else{
+                    obj.children = []
+                }
+                data.push(obj)
+            })
+            return data
+        },
+
         getAPI() {
-            if(this.inputText == '' ) {
+            if(this.inputText == "" && this.selectedAdcode == "") {
                 this.showToastMessage()
                 this.$refs.weatherInput.focus();           
             }
             else {
                 try {
-                    let adcode = ""
-                    axios.get(`https://restapi.amap.com/v3/config/district?key=${process.env.VUE_APP_KEY_WEATHER}&keywords=${this.inputText}`)
-                    .then(response => {
-                        adcode = response.data ?. districts[0] ?. adcode
-                        axios.get(`https://restapi.amap.com/v3/weather/weatherInfo?key=${process.env.VUE_APP_KEY_WEATHER}&city=${adcode}`)
+                    if(this.queryType == 1){
+                        let adcode = ""
+                        axios.get(`https://restapi.amap.com/v3/config/district?key=${process.env.VUE_APP_KEY_WEATHER}&keywords=${this.inputText}`)
                         .then(response => {
-                            this.dataAPI = response.data;
-                            this.inputText = ''               
-                        })  
-                        .catch(() => {
-                            this.showToastMessage()
-                            this.inputText = ''               
-                        });
-                    })
+                            if(response.data ?. districts.length == 0 || response.data ?. districts[0] ?. adcode == 100000){
+                                this.showToastMessage()
+                                this.inputText = ''
+                                return
+                            }
+                            adcode = response.data ?. districts[0] ?. adcode
+
+                            this.getWeatherInfo(adcode)
+                        })
+                    }else{
+                        this.getWeatherInfo(this.selectedAdcode)
+                    }
                 }
                 catch (error) {
                    if (error.response) {
@@ -137,6 +203,24 @@ export default {
                     }
                 }             
             }     
+        },
+
+        getWeatherInfo(adcode){
+            axios.get(`https://restapi.amap.com/v3/weather/weatherInfo?key=${process.env.VUE_APP_KEY_WEATHER}&city=${adcode}`)
+            .then(response => {
+                this.dataAPI = response.data;
+                this.inputText = ''            
+                this.selectedAdcode = ''            
+            })  
+            .catch(() => {
+                this.showToastMessage()
+                this.inputText = '' 
+                this.selectedAdcode = ''            
+            });
+        },
+
+        clickNode(e){
+            this.selectedAdcode = e[0]
         }
     }
 }
@@ -158,9 +242,26 @@ export default {
     position: relative;
 }
 
+#container{
+    position: fixed;
+    top: 50%;
+    left: 65%;
+    transform: translate(-50%,-50%);
+}
+
 .content{
     margin: 0 auto;
     width: 700px;
+}
+
+.content .btn1, .content .btn3{
+    margin-right: 30px;
+}
+
+.v-treeview{
+    height: 500px;
+    overflow: scroll;
+    width: 200px;
 }
 
 /* toast  */

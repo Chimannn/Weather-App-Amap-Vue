@@ -1,6 +1,6 @@
 <template> 
 
-    <div v-if="hasAPI" id="container">
+    <div v-show="hasAPI" id="container" ref="containerRef">
         
         <!-- left side -->
         <div class="weather-img">
@@ -53,7 +53,7 @@
 import moment from "moment";
 export default {
 name: 'WeatherInfo',
-props: ['dataAPI'], 
+props: ['dataAPI', 'queryType'], 
 data() {
     return{
         liveWeather: '',
@@ -69,11 +69,24 @@ data() {
         sun_down: '',
         size: '333px',
         reporttime: '',
-        windDirection: ''
+        windDirection: '',
+        container: ""
     }
+},
+mounted(){
+    this.container = this.$refs.containerRef
 },
 watch: {
     dataAPI: function() {
+        if(this.dataAPI == ""){
+            this.hasAPI = false
+            return
+        }
+        if(this.queryType == 1){
+            this.container.style.left = "50%"
+        }else{
+            this.container.style.left = "65%"
+        }
         this.hasAPI = true
         this.handleAPI(this.dataAPI.lives[0])
     }
@@ -104,14 +117,13 @@ methods:{
     },
 
     changeSize(){
-        var container = document.querySelector('#container')
         var weatherInfo = document.querySelector('.weather-info')
         var showInfoWeather = document.querySelector('.show-info-weather')
-        var containerStyle = container.style.width
+        var containerStyle = this.container.style.width
 
         //Expand box weather info
         if(containerStyle == '700px' ) {
-            container.style.setProperty('width', '333px')
+            this.container.style.setProperty('width', '333px')
             weatherInfo.style.setProperty('display', 'none')
             document.querySelector('.icon-switching').src = 'https://img.icons8.com/external-those-icons-flat-those-icons/24/000000/external-Arrow-arrows-those-icons-flat-those-icons-45.png'
 
@@ -121,7 +133,7 @@ methods:{
             showInfoWeather.style.borderBottomLeftRadius = '0px'
 
         }else{
-            container.style.setProperty('width', '700px')
+            this.container.style.setProperty('width', '700px')
             weatherInfo.style.setProperty('display', 'flex')
             document.querySelector('.icon-switching').src = 'https://img.icons8.com/external-those-icons-flat-those-icons/24/000000/external-Arrow-arrows-those-icons-flat-those-icons-46.png'
 
