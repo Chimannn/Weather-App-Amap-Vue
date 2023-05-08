@@ -99,7 +99,42 @@ export default {
             queryType: 1,
         };
     },
+    mounted(){
+        let options = {
+            enableHighAccuracy: false,
+            timeout: 5000,
+            maximumAge: 0
+        };
+        if(navigator.geolocation){
+            navigator.geolocation.getCurrentPosition(this.onGeoSuccess, this.onGeoError, options);
+        }
+    },
     methods: {
+        onGeoSuccess(ops) {
+            let latitude = this.limitDotStr6(ops.coords.latitude)
+            let longitude = this.limitDotStr6(ops.coords.longitude)
+            const location = `${longitude},${latitude}`
+            axios.get(`https://restapi.amap.com/v3/geocode/regeo?key=${process.env.VUE_APP_KEY_WEATHER}&location=${location}`)
+            .then(res => {
+                this.inputText = res.data?.regeocode?.addressComponent?.adcode
+                this.queryType = 1
+                this.getAPI()
+            })
+        },
+
+        onGeoError(err) {
+            console.log(err);
+        },
+
+        limitDotStr6(str) {
+            str = str.toString()
+            const parts = str.split(".")
+            if(parts.length > 1 && parts[1].length > 6){
+                return `${parts[0]}.${parts[1].substring(0,6)}`
+            }
+            return str
+        },
+
         clearText() {
             this.inputText = ''               
             this.$refs.weatherInput.focus()         
