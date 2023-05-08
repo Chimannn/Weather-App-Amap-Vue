@@ -1,6 +1,10 @@
 <template>
 <div class="container">
-    
+    <div v-if="showLocalWeather" class="localDiv">
+        <div class="localDistric">{{ localDistric }}</div>
+        <div class="localTemperature">{{ localTemperature }}°C</div>
+        <div class="localWeatherInfo"><span>😊</span> {{ localWeatherInfo }}</div>
+    </div>
     <div class="content">
 
         <v-btn
@@ -97,6 +101,11 @@ export default {
             districts: [],
             selectedAdcode: "",
             queryType: 1,
+            localWeatherInfo: "天气",
+            localDistric: "地区",
+            localTemperature: "温度",
+            showLocalWeather: false,
+            localAdcode: "",
         };
     },
     mounted(){
@@ -116,8 +125,8 @@ export default {
             const location = `${longitude},${latitude}`
             axios.get(`https://restapi.amap.com/v3/geocode/regeo?key=${process.env.VUE_APP_KEY_WEATHER}&location=${location}`)
             .then(res => {
-                this.inputText = res.data?.regeocode?.addressComponent?.adcode
-                this.queryType = 1
+                this.localAdcode = res.data?.regeocode?.addressComponent?.adcode
+                this.queryType = 3
                 this.getAPI()
             })
         },
@@ -202,7 +211,7 @@ export default {
         },
 
         getAPI() {
-            if(this.inputText == "" && this.selectedAdcode == "") {
+            if(this.inputText == "" && this.selectedAdcode == "" && this.queryType != 3) {
                 this.showToastMessage()
                 this.$refs.weatherInput.focus();           
             }
@@ -222,7 +231,8 @@ export default {
                             this.getWeatherInfo(adcode)
                         })
                     }else{
-                        this.getWeatherInfo(this.selectedAdcode)
+                        const theAdcode = this.queryType == 2 ? this.selectedAdcode : this.localAdcode
+                        this.getWeatherInfo(theAdcode)
                     }
                 }
                 catch (error) {
@@ -243,14 +253,33 @@ export default {
         getWeatherInfo(adcode){
             axios.get(`https://restapi.amap.com/v3/weather/weatherInfo?key=${process.env.VUE_APP_KEY_WEATHER}&city=${adcode}`)
             .then(response => {
-                this.dataAPI = response.data;
-                this.inputText = ''            
-                this.selectedAdcode = ''            
+                const data = response.data                
+                if(data.status == 1){
+                    if(this.queryType == 3){
+                        this.localDistric = data.lives[0].city
+                        this.localTemperature = data.lives[0].temperature
+                        this.localWeatherInfo = data.lives[0].weather
+                        this.showLocalWeather = true
+                    }else{
+                        this.dataAPI = data;
+                        this.inputText = ''            
+                        this.selectedAdcode = ''  
+                    }
+                }
+                           
             })  
             .catch(() => {
-                this.showToastMessage()
-                this.inputText = '' 
-                this.selectedAdcode = ''            
+                if(this.queryType == 3){
+                    this.localDistric = ""
+                    this.localTemperature = ""
+                    this.localWeatherInfo = ""
+                    this.showLocalWeather = false
+                    this.localAdcode = ""
+                }else{
+                    this.showToastMessage()
+                    this.inputText = '' 
+                    this.selectedAdcode = '' 
+                }      
             });
         },
 
@@ -261,7 +290,35 @@ export default {
 }
 </script>
 
-<style>
+<style lang="scss">
+.localDiv{
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 100px;
+    height: 100px;
+    box-shadow: -1px 4px 28px 0px rgba(0,0,0,0.75);
+    border-radius: 15px;
+    background: rgba(0, 0, 0, 0.4);
+    color: white;
+    padding: 8px;
+    .localDistric{
+        font-size: 16px;
+        text-align: left;
+    }
+    .localTemperature{
+        font-size: 28px;
+        text-align: left;
+    }
+    .localWeatherInfo{
+        span{
+            font-size: 18px;
+        }
+        font-size: 14px;
+        text-align: left;
+    }
+}
+
 .down-arrow{
     fill: var(--white-color);
 }

@@ -32,7 +32,7 @@ export default {
     background-size: contain;
     background-position: center;
     text-align: center;
-    /* animation: change 15s infinite; */
+    animation: change 15s infinite;
   }
 
 
